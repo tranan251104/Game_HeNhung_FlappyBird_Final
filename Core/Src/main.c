@@ -223,13 +223,14 @@ void SaveTopScoreToFlash(uint16_t newScore)
   HAL_FLASH_Lock();
 }
 
+// Turn on/off the LED
 static void GameFeedback_SetLed(uint8_t ledMask, GPIO_PinState state)
 {
-  if ((ledMask & GAME_FEEDBACK_LED_GREEN) != 0U)
+  if ((ledMask & GAME_FEEDBACK_LED_GREEN) != 0U) // Check if the green LED is on
   {
     HAL_GPIO_WritePin(GPIOG, GPIO_PIN_13, state);
   }
-  if ((ledMask & GAME_FEEDBACK_LED_RED) != 0U)
+  if ((ledMask & GAME_FEEDBACK_LED_RED) != 0U) // Check if the red LED is on
   {
     HAL_GPIO_WritePin(GPIOG, GPIO_PIN_14, state);
   }
@@ -1223,17 +1224,18 @@ void StartDefaultTask(void *argument)
   /* USER CODE BEGIN 5 */
   /* Infinite loop */
   for(;;)
-  {
-    uint32_t now = HAL_GetTick();
+  { 
+    uint32_t now = HAL_GetTick(); // Get current time 
     if (buzzerActive && now >= buzzerUntil) {
       GameFeedback_ConfigBuzzerOffPin();
       buzzerActive = 0;
     }
+    // Check if feedback LED is active and the time has come to turn it off
     if (feedbackLedMask && now >= feedbackLedUntil) {
       GameFeedback_SetLed(feedbackLedMask, GPIO_PIN_RESET);
-      feedbackLedMask = 0;
+      feedbackLedMask = 0; // Clear the LED mask
     }
-    osDelay(10);
+    osDelay(10); // Delay for 10ms to prevent the loop from running too fast and consuming too much CPU power
   }
   /* USER CODE END 5 */
 }

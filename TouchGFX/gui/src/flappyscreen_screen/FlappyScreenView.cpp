@@ -297,14 +297,22 @@ void FlappyScreenView::positionPipe(int index, int16_t gapTop)
     if (upH < 1) upH = 1;
     if (downH < 1) downH = 1;
 
-    wallUp[index]->invalidate();
-    wallDown[index]->invalidate();
+    // Cache pointers and values to avoid repeated array indexing
+    auto* currentWallUp = wallUp[index];
+    auto* currentWallDown = wallDown[index];
+    int16_t currentPipeX = pipeX[index];
 
-    wallUp[index]->setPosition(pipeX[index], 0, wallUp[index]->getWidth(), upH);
-    wallDown[index]->setPosition(pipeX[index], gapBottom, wallDown[index]->getWidth(), downH);
+    // Invalidate the old screen area before moving to clear the previous drawing
+    currentWallUp->invalidate();
+    currentWallDown->invalidate();
 
-    wallUp[index]->invalidate();
-    wallDown[index]->invalidate();
+    // Update position and dimensions for the upper and lower walls
+    currentWallUp->setPosition(currentPipeX, 0, currentWallUp->getWidth(), upH);
+    currentWallDown->setPosition(currentPipeX, gapBottom, currentWallDown->getWidth(), downH);
+
+    // Invalidate the new screen area after moving to render the new drawing
+    currentWallUp->invalidate();
+    currentWallDown->invalidate();
 }
 
 void FlappyScreenView::startDyingSequence()
