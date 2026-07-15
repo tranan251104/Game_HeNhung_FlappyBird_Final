@@ -18,7 +18,13 @@
   ******************************************************************************
   */
 /* USER CODE END Header */
+/* USER CODE BEGIN EFP */
+/* Game feedback control functions */
+void GameFeedback_Play(uint16_t buzzerMs, uint8_t ledMask);
 
+/* Pause request handler */
+uint8_t GameFeedback_ConsumePauseRequest(void);
+/* USER CODE END EFP */
 /* Define to prevent recursive inclusion -------------------------------------*/
 #ifndef __MAIN_H
 #define __MAIN_H
