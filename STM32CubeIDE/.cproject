@@ -133,6 +133,9 @@
               <tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec.547760202" name="MCU Output Converter Motorola S-rec with symbols" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec"/>
             </toolChain>
           </folderInfo>
+          <sourceEntries>
+            <entry excluding="Core/Startup|TouchGFX/simulator|TouchGFX/generated/simulator|Middlewares/ST/touchgfx/framework/source|Middlewares/ST/touchgfx/os|Drivers/CMSIS/Device/ST/STM32F4xx/Source" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+          </sourceEntries>
         </configuration>
       </storageModule>
       <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>
@@ -261,6 +264,9 @@
               <tool id="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec.1661824816" name="MCU Output Converter Motorola S-rec with symbols" superClass="com.st.stm32cube.ide.mcu.gnu.managedbuild.tool.objcopy.symbolsrec"/>
             </toolChain>
           </folderInfo>
+          <sourceEntries>
+            <entry excluding="Core/Startup|TouchGFX/simulator|TouchGFX/generated/simulator|Middlewares/ST/touchgfx/framework/source|Middlewares/ST/touchgfx/os|Drivers/CMSIS/Device/ST/STM32F4xx/Source" flags="VALUE_WORKSPACE_PATH|RESOLVED" kind="sourcePath" name=""/>
+          </sourceEntries>
         </configuration>
       </storageModule>
       <storageModule moduleId="org.eclipse.cdt.core.externalSettings"/>

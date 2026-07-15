@@ -40,7 +40,9 @@
 #define SDRAM_TIMEOUT           ((uint32_t)0xFFFF)
 #define TOPSCORE_FLASH_ADDR     ((uint32_t)0x081E0000)
 #define TOPSCORE_FLASH_MAGIC    ((uint32_t)0x544F5053)
-#define TOPSCORE_FLASH_VERSION  ((uint32_t)0x20260715)
+#define APP_FLASH_START_ADDR    ((uint32_t)0x08000000)
+#define TOPSCORE_HASH_OFFSET    ((uint32_t)2166136261U)
+#define TOPSCORE_HASH_PRIME     ((uint32_t)16777619U)
 #define TOPSCORE_VERSION_ADDR   (TOPSCORE_FLASH_ADDR + 4U)
 #define TOPSCORE_VALUE_ADDR     (TOPSCORE_FLASH_ADDR + 8U)
 #define GAME_FEEDBACK_ENABLE_BUZZER 0U
@@ -172,16 +174,48 @@ static LCD_DrvTypeDef* LcdDrv;
 uint32_t I2c3Timeout = I2C3_TIMEOUT_MAX; /*<! Value of Timeout when I2C communication fails */
 uint32_t Spi5Timeout = SPI5_TIMEOUT_MAX; /*<! Value of Timeout when SPI communication fails */
 
+extern uint32_t _sidata;
+extern uint32_t _sdata;
+extern uint32_t _edata;
+
 static uint32_t Flash_ReadWord(uint32_t address)
 {
   return *(__IO uint32_t*)address;
+}
+
+static uint32_t TopScore_GetFirmwareId(void)
+{
+  uint32_t imageEnd = (uint32_t)&_sidata + ((uint32_t)&_edata - (uint32_t)&_sdata);
+  uint32_t hash = TOPSCORE_HASH_OFFSET;
+
+  if (imageEnd > TOPSCORE_FLASH_ADDR)
+  {
+    imageEnd = TOPSCORE_FLASH_ADDR;
+  }
+  imageEnd &= ~3U;
+
+  for (uint32_t address = APP_FLASH_START_ADDR; address < imageEnd; address += 4U)
+  {
+    hash ^= Flash_ReadWord(address);
+    hash *= TOPSCORE_HASH_PRIME;
+  }
+
+  hash ^= imageEnd;
+  hash *= TOPSCORE_HASH_PRIME;
+  if ((hash == 0U) || (hash == 0xFFFFFFFFU))
+  {
+    hash ^= TOPSCORE_FLASH_MAGIC;
+  }
+
+  return hash;
 }
 
 void LoadTopScoreFromFlash(void)
 {
   uint32_t magic = Flash_ReadWord(TOPSCORE_FLASH_ADDR);
   uint32_t version = Flash_ReadWord(TOPSCORE_VERSION_ADDR);
-  if ((magic == TOPSCORE_FLASH_MAGIC) && (version == TOPSCORE_FLASH_VERSION))
+  uint32_t firmwareId = TopScore_GetFirmwareId();
+  if ((magic == TOPSCORE_FLASH_MAGIC) && (version == firmwareId))
   {
     topScore = (uint16_t)Flash_ReadWord(TOPSCORE_VALUE_ADDR);
   }
@@ -195,7 +229,8 @@ void SaveTopScoreToFlash(uint16_t newScore)
 {
   uint32_t magic = Flash_ReadWord(TOPSCORE_FLASH_ADDR);
   uint32_t version = Flash_ReadWord(TOPSCORE_VERSION_ADDR);
-  uint32_t stored = ((magic == TOPSCORE_FLASH_MAGIC) && (version == TOPSCORE_FLASH_VERSION)) ?
+  uint32_t firmwareId = TopScore_GetFirmwareId();
+  uint32_t stored = ((magic == TOPSCORE_FLASH_MAGIC) && (version == firmwareId)) ?
                     Flash_ReadWord(TOPSCORE_VALUE_ADDR) : 0xFFFFFFFFU;
   if (stored == (uint32_t)newScore)
   {
@@ -216,7 +251,7 @@ void SaveTopScoreToFlash(uint16_t newScore)
   if (HAL_FLASHEx_Erase(&eraseInit, &sectorError) == HAL_OK)
   {
     (void)HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, TOPSCORE_FLASH_ADDR, TOPSCORE_FLASH_MAGIC);
-    (void)HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, TOPSCORE_VERSION_ADDR, TOPSCORE_FLASH_VERSION);
+    (void)HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, TOPSCORE_VERSION_ADDR, firmwareId);
     (void)HAL_FLASH_Program(FLASH_TYPEPROGRAM_WORD, TOPSCORE_VALUE_ADDR, (uint32_t)newScore);
   }
 
