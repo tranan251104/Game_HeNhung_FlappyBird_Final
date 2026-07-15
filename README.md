@@ -237,7 +237,7 @@ See the [open issues](https://github.com/ihbkaiser/ihbkaiser-Game-HeNhung20252/i
 
 ## Contributing
 
-* If you have suggestions for adding or removing projects, feel free to [open an issue](https://github.com/ihbkaiser/ihbkaiser-Game-HeNhung20251/issues/new) to discuss it.
+* If you have suggestions for adding or removing projects, feel free to [open an issue](https://github.com/ihbkaiser/ihbkaiser-Game-HeNhung20252/issues/new) to discuss it.
 * Please make sure you check your spelling and grammar.
 * Create individual PR for each suggestion.
 
