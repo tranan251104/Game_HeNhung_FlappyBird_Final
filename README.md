@@ -111,7 +111,7 @@ void FlappyScreenView::flap()
 }
 ```
 
-**d) Hiển thị điểm trong game**
+**c) Hiển thị điểm trong game**
 - Trong `FlappyScreenView`, khi chim vượt qua một cột ống thì tăng `gameScore`.
 - Cập nhật text bằng `TypedText` + wildcard để hiện số.
 
@@ -127,7 +127,7 @@ void FlappyScreenView::updateScoreText()
 }
 ```
 
-**e) Game Over + hiển thị điểm và top score**
+**d) Game Over + hiển thị điểm và top score**
 - Khi va chạm hoặc rơi khỏi màn hình: gọi `endGame()`.
 - Ghi `score` và cập nhật `topScore` (RAM, reset khi board reset).
 - Chuyển sang Screen2 (Game Over) và hiển thị 2 giá trị.
@@ -143,7 +143,7 @@ void FlappyScreenView::endGame()
 }
 ```
 
-**f) Nút BACK ở Game Over**
+**e) Nút BACK ở Game Over**
 - Có vùng nút BACK (X=0, Y=249, W=240, H=71).
 - Khi chạm trong vùng này, quay lại menu.
 
@@ -233,7 +233,7 @@ Current feedback works without extra wiring when the STM32F429I-DISCO is only co
 
 ## Roadmap
 
-See the [open issues](https://github.com/ihbkaiser/ihbkaiser-Game-HeNhung20251/issues) for a list of proposed features (and known issues).
+See the [open issues](https://github.com/ihbkaiser/ihbkaiser-Game-HeNhung20252/issues) for a list of proposed features (and known issues).
 
 ## Contributing
 
