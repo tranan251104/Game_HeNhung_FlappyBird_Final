@@ -10,6 +10,33 @@ extern "C" {
     void SaveTopScoreToFlash(uint16_t newScore);
 }
 
+static const int16_t SCREEN_HEIGHT = 320;
+static const int16_t PIPE_COUNT = 4;
+static const int16_t BIRD_SIZE = 24;
+static const int16_t FIXED_POINT_SCALE = 256;
+static const int16_t HITBOX_INSET = 4;
+static const int16_t GAP_MARGIN = 30;
+static const int16_t START_PIPE_X = 300;
+
+static const int32_t GRAVITY_FP = 45;
+static const int32_t DEATH_GRAVITY_FP = 60;
+static const int32_t FLAP_VELOCITY_FP = -800;
+static const int32_t DEATH_BOUNCE_VELOCITY_FP = -500;
+
+static const uint16_t SCORE_PER_DIFFICULTY_LEVEL = 6U;
+static const uint8_t MAX_DIFFICULTY_LEVEL = 3U;
+static const uint32_t INITIAL_RNG_STATE = 0xA5A5A5A5u;
+
+static const int16_t BASE_PIPE_SPEED = 2;
+static const int16_t BASE_GAP_SIZE = 92;
+static const int16_t GAP_SIZE_STEP = 8;
+static const int16_t BASE_PIPE_SPACING = 82;
+static const int16_t PIPE_SPACING_STEP = 4;
+static const int16_t BASE_GAP_DELTA = 35;
+static const int16_t GAP_DELTA_STEP = 8;
+static const int16_t CHALLENGE_GAP_REDUCTION = 14;
+static const int16_t MIN_CHALLENGE_GAP = 58;
+
 static uint32_t lcgNext(uint32_t state)
 {
     return state * 1103515245u + 12345u;
@@ -24,7 +51,13 @@ static int16_t clamp16(int16_t v, int16_t lo, int16_t hi)
 
 static bool shouldUseChallengePipe(uint16_t score, uint32_t state)
 {
-    return (score >= 6U) && (((state >> 24) % 4U) == 0U);
+    return (score >= SCORE_PER_DIFFICULTY_LEVEL) && (((state >> 24) % PIPE_COUNT) == 0U);
+}
+
+static bool rectanglesOverlap(int16_t ax, int16_t ay, int16_t aw, int16_t ah,
+                              int16_t bx, int16_t by, int16_t bw, int16_t bh)
+{
+    return (ax < bx + bw) && (ax + aw > bx) && (ay < by + bh) && (ay + ah > by);
 }
 
 FlappyScreenView::FlappyScreenView()
@@ -41,8 +74,8 @@ void FlappyScreenView::setupScreen()
     isPaused = false;
     isDying = false;
 
-    bird.setWidth(24);
-    bird.setHeight(24);
+    bird.setWidth(BIRD_SIZE);
+    bird.setHeight(BIRD_SIZE);
     updateScoreText();
 
     wallUp[0] = &wallUp1;
@@ -55,17 +88,15 @@ void FlappyScreenView::setupScreen()
     wallDown[2] = &wallDown3;
     wallDown[3] = &wallDown4;
 
-    const int16_t screenH = 320;
     const int16_t gapSize = currentGapSize();
-    const int16_t minGapTop = 30;
-    const int16_t maxGapTop = screenH - gapSize - 30;
+    const int16_t minGapTop = GAP_MARGIN;
+    const int16_t maxGapTop = SCREEN_HEIGHT - gapSize - GAP_MARGIN;
     const int16_t spacing = currentSpacing();
-    const int16_t startX = 300;
 
-    rngState = 0xA5A5A5A5u;
+    rngState = INITIAL_RNG_STATE;
 
-    for (int i = 0; i < 4; ++i) {
-        pipeX[i] = startX + (i * spacing);
+    for (int i = 0; i < PIPE_COUNT; ++i) {
+        pipeX[i] = START_PIPE_X + (i * spacing);
         pipePassed[i] = false;
         pipeChallenge[i] = false;
 
@@ -78,7 +109,7 @@ void FlappyScreenView::setupScreen()
         positionPipe(i, pipeGapTopY[i]);
     }
 
-    birdY_fp = bird.getY() * 256;
+    birdY_fp = bird.getY() * FIXED_POINT_SCALE;
     birdVel_fp = 0;
 }
 
@@ -106,7 +137,7 @@ void FlappyScreenView::flap()
         gameRunning = true;
     }
 
-    birdVel_fp = -800;
+    birdVel_fp = FLAP_VELOCITY_FP;
     GameFeedback_Play(35U, GAME_FEEDBACK_LED_GREEN);
 }
 
@@ -121,14 +152,13 @@ void FlappyScreenView::handleTickEvent()
     }
 
     if (isDying) {
-        const int32_t gravity_dead = 60;
-        birdVel_fp += gravity_dead;
+        birdVel_fp += DEATH_GRAVITY_FP;
         birdY_fp += birdVel_fp;
 
-        int16_t newY = (int16_t)(birdY_fp / 256);
+        int16_t newY = (int16_t)(birdY_fp / FIXED_POINT_SCALE);
         bird.moveTo(bird.getX(), newY);
 
-        if (newY > 320) {
+        if (newY > SCREEN_HEIGHT) {
             endGame();
         }
         return;
@@ -138,16 +168,14 @@ void FlappyScreenView::handleTickEvent()
         return;
     }
 
-    const int32_t gravity_fp = 45;
     const int16_t speed = currentPipeSpeed();
-    const int16_t screenH = 320;
     const int16_t spacing = currentSpacing();
 
-    birdVel_fp += gravity_fp;
+    birdVel_fp += GRAVITY_FP;
     birdY_fp += birdVel_fp;
-    int16_t newY = (int16_t)(birdY_fp / 256);
+    int16_t newY = (int16_t)(birdY_fp / FIXED_POINT_SCALE);
 
-    if (newY < 0 || newY + bird.getHeight() > screenH) {
+    if (newY < 0 || newY + bird.getHeight() > SCREEN_HEIGHT) {
         startDyingSequence();
         return;
     }
@@ -155,14 +183,14 @@ void FlappyScreenView::handleTickEvent()
 
     int16_t maxX = pipeX[0];
     int16_t maxIndex = 0;
-    for (int i = 1; i < 4; ++i) {
+    for (int i = 1; i < PIPE_COUNT; ++i) {
         if (pipeX[i] > maxX) {
             maxX = pipeX[i];
             maxIndex = i;
         }
     }
 
-    for (int i = 0; i < 4; ++i) {
+    for (int i = 0; i < PIPE_COUNT; ++i) {
         pipeX[i] -= speed;
 
         if (pipeX[i] + wallUp[i]->getWidth() < 0) {
@@ -187,10 +215,10 @@ void FlappyScreenView::handleTickEvent()
             updateScoreText();
         }
 
-        int16_t bx = bird.getX() + 4;
-        int16_t by = bird.getY() + 4;
-        int16_t bw = bird.getWidth() - 8;
-        int16_t bh = bird.getHeight() - 8;
+        int16_t bx = bird.getX() + HITBOX_INSET;
+        int16_t by = bird.getY() + HITBOX_INSET;
+        int16_t bw = bird.getWidth() - (HITBOX_INSET * 2);
+        int16_t bh = bird.getHeight() - (HITBOX_INSET * 2);
 
         int16_t ux = wallUp[i]->getX();
         int16_t uy = wallUp[i]->getY();
@@ -202,8 +230,8 @@ void FlappyScreenView::handleTickEvent()
         int16_t dw = wallDown[i]->getWidth();
         int16_t dh = wallDown[i]->getHeight();
 
-        bool hitUp = (bx < ux + uw) && (bx + bw > ux) && (by < uy + uh) && (by + bh > uy);
-        bool hitDown = (bx < dx + dw) && (bx + bw > dx) && (by < dy + dh) && (by + bh > dy);
+        bool hitUp = rectanglesOverlap(bx, by, bw, bh, ux, uy, uw, uh);
+        bool hitDown = rectanglesOverlap(bx, by, bw, bh, dx, dy, dw, dh);
 
         if (hitUp || hitDown) {
             startDyingSequence();
@@ -214,23 +242,23 @@ void FlappyScreenView::handleTickEvent()
 
 uint8_t FlappyScreenView::difficultyLevel() const
 {
-    uint16_t level = (uint16_t)(gameScore / 6U);
-    return (uint8_t)((level > 3U) ? 3U : level);
+    uint16_t level = (uint16_t)(gameScore / SCORE_PER_DIFFICULTY_LEVEL);
+    return (uint8_t)((level > MAX_DIFFICULTY_LEVEL) ? MAX_DIFFICULTY_LEVEL : level);
 }
 
 int16_t FlappyScreenView::currentPipeSpeed() const
 {
-    return (int16_t)(2 + difficultyLevel());
+    return (int16_t)(BASE_PIPE_SPEED + difficultyLevel());
 }
 
 int16_t FlappyScreenView::currentGapSize() const
 {
-    return (int16_t)(92 - (difficultyLevel() * 8));
+    return (int16_t)(BASE_GAP_SIZE - (difficultyLevel() * GAP_SIZE_STEP));
 }
 
 int16_t FlappyScreenView::currentSpacing() const
 {
-    return (int16_t)(82 + (difficultyLevel() * 4));
+    return (int16_t)(BASE_PIPE_SPACING + (difficultyLevel() * PIPE_SPACING_STEP));
 }
 
 void FlappyScreenView::togglePause()
@@ -245,11 +273,10 @@ void FlappyScreenView::togglePause()
 
 int16_t FlappyScreenView::nextGapTopFrom(int16_t prevGapTop)
 {
-    const int16_t screenH = 320;
     const int16_t gapSize = currentGapSize();
-    const int16_t minGapTop = 30;
-    const int16_t maxGapTop = screenH - gapSize - 30;
-    const int16_t deltaMax = (int16_t)(35 + (difficultyLevel() * 8));
+    const int16_t minGapTop = GAP_MARGIN;
+    const int16_t maxGapTop = SCREEN_HEIGHT - gapSize - GAP_MARGIN;
+    const int16_t deltaMax = (int16_t)(BASE_GAP_DELTA + (difficultyLevel() * GAP_DELTA_STEP));
 
     rngState = lcgNext(rngState);
     int16_t delta = (int16_t)((rngState >> 16) % (2 * deltaMax + 1)) - deltaMax;
@@ -258,15 +285,14 @@ int16_t FlappyScreenView::nextGapTopFrom(int16_t prevGapTop)
 
 void FlappyScreenView::positionPipe(int index, int16_t gapTop)
 {
-    const int16_t screenH = 320;
     int16_t gapSize = currentGapSize();
     if (pipeChallenge[index]) {
-        gapSize = clamp16((int16_t)(gapSize - 14), 58, gapSize);
+        gapSize = clamp16((int16_t)(gapSize - CHALLENGE_GAP_REDUCTION), MIN_CHALLENGE_GAP, gapSize);
     }
     int16_t gapBottom = gapTop + gapSize;
 
     int16_t upH = gapTop;
-    int16_t downH = screenH - gapBottom;
+    int16_t downH = SCREEN_HEIGHT - gapBottom;
 
     if (upH < 1) upH = 1;
     if (downH < 1) downH = 1;
@@ -289,7 +315,7 @@ void FlappyScreenView::startDyingSequence()
 
     isPaused = false;
     isDying = true;
-    birdVel_fp = -500;
+    birdVel_fp = DEATH_BOUNCE_VELOCITY_FP;
     GameFeedback_Play(180U, GAME_FEEDBACK_LED_RED);
 }
 
