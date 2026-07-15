@@ -111,25 +111,6 @@ void FlappyScreenView::flap()
 }
 ```
 
-**c) Buzzer PA0**
-- PA0 cấu hình GPIO Output, **active‑low** (kéo xuống LOW thì buzzer kêu).
-- Gameplay hiện không kích buzzer khi chim nhảy.
-- Dùng `StartDefaultTask()` để tắt buzzer đúng thời gian mà không block hệ thống.
-
-Trích từ: `Core/Src/main.c`
-```c
-void StartDefaultTask(void *argument)
-{
-    for (;;) {
-        if (buzzerActive && HAL_GetTick() >= buzzerUntil) {
-            HAL_GPIO_WritePin(GPIOA, GPIO_PIN_0, GPIO_PIN_SET); // buzzer OFF
-            buzzerActive = 0;
-        }
-        osDelay(10);
-    }
-}
-```
-
 **d) Hiển thị điểm trong game**
 - Trong `FlappyScreenView`, khi chim vượt qua một cột ống thì tăng `gameScore`.
 - Cập nhật text bằng `TypedText` + wildcard để hiện số.
