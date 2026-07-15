@@ -189,15 +189,16 @@ void Screen2View::handleClickEvent(const touchgfx::ClickEvent& evt)
 - **Tính điểm & kết thúc:** Khi chim vượt qua một cột ống (ống đã đi qua bên trái chim) thì cộng **+1** điểm. Game kết thúc khi chim chạm ống hoặc rơi khỏi màn hình; điểm cuối cùng được lưu lại. Nếu điểm này cao hơn `TopScore` thì cập nhật `TopScore`.
 
 ### 4. Danh sách thành viên & đóng góp
-- **Đoàn Duy Tùng:** Phụ trách triển khai logic game.
-- **Ngô Đức Chung:** Phụ trách triển khai logic game.
-- **Nguyễn Hoàng Vĩnh Phong:** Thiết kế giao diện TouchGFX.
+- **An:** Lập trình logic cốt lõi của game, mô phỏng chuyển động vật lý của chim và quản lý chướng ngại vật.
+- **Tùng:** Thiết kế giao diện (UI), hoạt ảnh và quản lý điều hướng, chuyển đổi màn hình trong game.
+- **Cường:** Cấu hình phần cứng hệ thống nhúng, điều khiển các đèn LED báo hiệu vật lý.
+- **Quân:** Tích hợp hệ thống phần mềm, lập trình đa nhiệm FreeRTOS, tối ưu hiệu năng hiển thị và kiểm thử lỗi.
 
 ### Course Information
 
-- Embedded Systems Assignment (Semester 20251) - HUST
+- Embedded Systems Assignment  (20252) - HUST
 - Topic: Flappy Bird Game
-- **Nhóm:** A1K61
+- **Nhóm: 11** 
 
 ### Game Logic
 
